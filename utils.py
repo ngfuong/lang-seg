@@ -13,7 +13,7 @@ import math
 from torchvision import transforms
 
 
-def do_training(hparams, model_constructor):
+def do_training(hparams, model_constructor, shot=None):
     # instantiate model
     model = model_constructor(**vars(hparams))
     # set all sorts of training parameters
@@ -37,10 +37,19 @@ def do_training(hparams, model_constructor):
         "checkpoints", name=hparams.exp_name, version=hparams.version
     )
 
-    hparams.callbacks = make_checkpoint_callbacks(hparams.exp_name, hparams.version)
+    tbdlogger = pl.loggers.TensorBoardLogger(
+        "checkpoints", name=hparams.exp_name, version=hparams.version
+        )
+    
+    # Handle metrics in logger
+    if shot=="few_shot":    # train zeroshot
+        hparams.callbacks = make_checkpoint_callbacks(hparams.exp_name, hparams.version, shot=shot)
+    else:   # train segmentation only
+        hparams.callbacks = make_checkpoint_callbacks(hparams.exp_name, hparams.version)
 
     wblogger = get_wandb_logger(hparams)
-    hparams.logger = [wblogger, ttlogger]
+    hparams.logger = [wblogger, tbdlogger, ttlogger]
+    # hparams.logger = [ttlogger]
 
     trainer = pl.Trainer.from_argparse_args(hparams)
     trainer.fit(model)
@@ -91,7 +100,7 @@ def get_default_argument_parser():
     return parser
 
 
-def make_checkpoint_callbacks(exp_name, version, base_path="checkpoints", frequency=1):
+def make_checkpoint_callbacks(exp_name, version, base_path="checkpoints", frequency=1, shot=None):
     version = 0 if version is None else version
 
     base_callback = pl.callbacks.ModelCheckpoint(
@@ -99,15 +108,25 @@ def make_checkpoint_callbacks(exp_name, version, base_path="checkpoints", freque
         save_last=True,
         verbose=True,
     )
-
-    val_callback = pl.callbacks.ModelCheckpoint(
-        monitor="val_acc_epoch",
-        dirpath=f"{base_path}/{exp_name}/version_{version}/checkpoints/",
-        filename="result-{epoch}-{val_acc_epoch:.2f}",
-        mode="max",
-        save_top_k=3,
-        verbose=True,
+    
+    if shot=="few_shot":
+        val_callback = pl.callbacks.ModelCheckpoint(
+            monitor='fewshot_val_iou',
+            dirpath=f"{base_path}/{exp_name}/version_{version}/checkpoints/",
+            filename="result-{epoch}-{fewshot_val_iou:.2f}",
+            mode="max",
+            # save_top_k=3,
+            verbose=True,
     )
+    else:
+        val_callback = pl.callbacks.ModelCheckpoint(
+            monitor='val_acc_epoch',
+            dirpath=f"{base_path}/{exp_name}/version_{version}/checkpoints/",
+            filename="result-{epoch}-{val_acc_epoch:.2f}",
+            mode="max",
+            save_top_k=3,
+            verbose=True,
+        )
 
     return [base_callback, val_callback]
 

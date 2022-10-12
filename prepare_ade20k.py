@@ -9,7 +9,7 @@ import zipfile
 from encoding.utils import download, mkdir
 # -
 
-_TARGET_DIR = os.path.expanduser('../datasets/')
+_TARGET_DIR = os.path.expanduser('/cm/archive/phuongln6/')
 
 def parse_args():
     parser = argparse.ArgumentParser(

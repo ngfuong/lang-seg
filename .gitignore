@@ -1,3 +1,10 @@
+# Dataset
+data/
+slurm-out/
+
+# Debug
+inspect_metrics.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

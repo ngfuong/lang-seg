@@ -307,7 +307,8 @@ def test(args):
 
     # Write evaluation results
     average_meter.write_result('Test', 0)
-    test_miou, test_fb_iou = average_meter.compute_iou()
+    # test_miou, test_fb_iou = average_meter.compute_iou()
+    test_miou, test_fb_iou = average_meter.compute_iou_debug()
 
     Logger.info('Fold %d, %d-shot ==> mIoU: %5.2f \t FB-IoU: %5.2f' % (args.fold, args.nshot, test_miou.item(), test_fb_iou.item()))
     Logger.info('==================== Finished Testing ====================')

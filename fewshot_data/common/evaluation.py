@@ -27,6 +27,9 @@ class Evaluator:
             if _inter.size(0) == 0:  # as torch.histc returns error if it gets empty tensor (pytorch 1.5.1)
                 _area_inter = torch.tensor([0, 0], device=_pred_mask.device)
             else:
+                # _area_inter shape: [2, 1]
+                # first row is #pixels=0 (not intersect)
+                # second row is #pixels=1 (intersect)
                 _area_inter = torch.histc(_inter, bins=2, min=0, max=1)
             area_inter.append(_area_inter)
             area_pred.append(torch.histc(_pred_mask, bins=2, min=0, max=1))

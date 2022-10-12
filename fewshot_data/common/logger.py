@@ -44,6 +44,24 @@ class AverageMeter:
 
         return miou, fb_iou
 
+    def compute_iou_debug(self):
+        # iou: [2, n]
+        iou = self.intersection_buf.float() / \
+              torch.max(torch.stack([self.union_buf, self.ones]), dim=0)[0]
+        iou = iou.index_select(1, self.class_ids_interest)
+        ### ADD DEBUG ###
+        print("CLASS OF INTEREST")
+        print(self.class_ids_interest)
+        print("IOU INFO")
+        print(iou)
+        ### END DEBUG ###
+        miou = iou[1].mean() * 100
+
+        fb_iou = (self.intersection_buf.index_select(1, self.class_ids_interest).sum(dim=1) /
+                  self.union_buf.index_select(1, self.class_ids_interest).sum(dim=1)).mean() * 100
+
+        return miou, fb_iou
+
     def write_result(self, split, epoch):
         iou, fb_iou = self.compute_iou()
 
