@@ -80,7 +80,13 @@ class AverageMeter:
             msg = '[Epoch: %02d] ' % epoch if epoch != -1 else ''
             msg += '[Batch: %04d/%04d] ' % (batch_idx+1, datalen)
             iou, fb_iou = self.compute_iou()
-            if epoch != -1:
+            ## BEGIN DEBUG
+            # epoch ==-2 for debug purposes
+            if epoch == -2:
+                loss_buf = torch.stack(self.loss_buf)
+                msg += 'L: %6.5f  ' % loss_buf[-1]
+                msg += 'Avg L: %6.5f  ' % loss_buf.mean()
+            elif epoch != -1:
                 loss_buf = torch.stack(self.loss_buf)
                 msg += 'L: %6.5f  ' % loss_buf[-1]
                 msg += 'Avg L: %6.5f  ' % loss_buf.mean()

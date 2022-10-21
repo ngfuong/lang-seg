@@ -115,7 +115,8 @@ def make_checkpoint_callbacks(exp_name, version, base_path="checkpoints", freque
             dirpath=f"{base_path}/{exp_name}/version_{version}/checkpoints/",
             filename="result-{epoch}-{fewshot_val_iou:.2f}",
             mode="max",
-            # save_top_k=3,
+            # set to save all model
+            save_top_k=-1,
             verbose=True,
     )
     else:
@@ -124,7 +125,8 @@ def make_checkpoint_callbacks(exp_name, version, base_path="checkpoints", freque
             dirpath=f"{base_path}/{exp_name}/version_{version}/checkpoints/",
             filename="result-{epoch}-{val_acc_epoch:.2f}",
             mode="max",
-            save_top_k=3,
+            save_top_k=-1,
+            # save_top_k=3,
             verbose=True,
         )
 
@@ -165,6 +167,51 @@ def get_latest_checkpoint(exp_name, version):
     latest = max(chkpts, key=os.path.getctime)
 
     return latest, version
+
+def get_e1_checkpoint(exp_name, version, epoch=1):
+    e1 = './checkpoints/train-vitl16-fold0-bsz1-lr2e-4-decay1e-5-e200/version_0/checkpoints/result-epoch=1-fewshot_val_iou=59.73.ckpt'
+    if os.path.exists(e1):
+        return e1, version
+        
+    while version > -1:
+        folder = f"./checkpoints/{exp_name}/version_{version}/checkpoints/"
+
+        e1 = f"{folder}/result-epoch=1-fewshot_val_iou=57.62.ckpt"
+        if os.path.exists(e1):
+            return e1, version
+
+        chkpts = glob(f"{folder}/epoch={epoch}*.ckpt")
+
+        if len(chkpts) > 0:
+            break
+
+        version -= 1
+
+    if len(chkpts) == 0:
+        return None, None
+
+    latest = max(chkpts, key=os.path.getctime)
+
+    return latest, version
+
+def set_resume_parameters_from_e1(hparams):
+    version = get_latest_version(f"./checkpoints/{hparams.exp_name}")
+
+    if version is not None:
+        latest, version = get_e1_checkpoint(hparams.exp_name, version)
+        print(f"Resuming checkpoint {latest}, exp_version={version}")
+
+        hparams.resume_from_checkpoint = latest
+        hparams.version = version
+
+        wandb_file = "checkpoints/{hparams.exp_name}/version_{version}/wandb_id"
+        if os.path.exists(wandb_file):
+            with open(wandb_file, "r") as f:
+                hparams.wandb_id = f.read()
+    else:
+        version = 0
+
+    return hparams
 
 
 def set_resume_parameters(hparams):

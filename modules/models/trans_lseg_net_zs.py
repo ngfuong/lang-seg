@@ -164,7 +164,7 @@ class TransLSeg(BaseModel):
         use_bn=False,
         **kwargs,
     ):
-        super(LSeg, self).__init__()
+        super(TransLSeg, self).__init__()
 
         self.channels_last = channels_last
 
@@ -255,11 +255,15 @@ class TransLSeg(BaseModel):
         imshape = image_features.shape
         image_features = [image_features[i].unsqueeze(0).permute(0,2,3,1).reshape(-1, self.out_c) for i in range(len(image_features))]
 
+
         # normalized features
         image_features = [image_feature / image_feature.norm(dim=-1, keepdim=True) for image_feature in image_features]
         text_features = [text_feature / text_feature.norm(dim=-1, keepdim=True) for text_feature in text_features]
 
-        
+        # BEGIN DEBUGGING
+        print(image_features[0].shape)
+        print(text_features[0].shape)
+
         ### EDIT THIS ###
         logits_per_images = [self.logit_scale * image_feature.half() @ text_feature.t() \
             for image_feature, text_feature in zip(image_features, text_features)]
@@ -272,7 +276,7 @@ class TransLSeg(BaseModel):
         return out
 
 
-class LSegNetZS(LSeg):
+class TransLSegNetZS(TransLSeg):
     """Network for semantic segmentation."""
     def __init__(self, label_list, path=None, scale_factor=0.5, aux=False, use_relabeled=False, use_pretrained=True, **kwargs):
 
@@ -295,7 +299,7 @@ class LSegNetZS(LSeg):
             self.load(path)
 
 
-class LSegRN(BaseModel):
+class TransLSegRN(BaseModel):
     def __init__(
         self,
         head,
@@ -306,7 +310,7 @@ class LSegRN(BaseModel):
         use_bn=False,
         **kwargs,
     ):
-        super(LSegRN, self).__init__()
+        super(TransLSegRN, self).__init__()
 
         self.channels_last = channels_last
 
@@ -397,7 +401,7 @@ class LSegRN(BaseModel):
         return out
 
 
-class LSegRNNetZS(LSegRN):
+class TransLSegRNNetZS(TransLSegRN):
     """Network for semantic segmentation."""
     def __init__(self, label_list, path=None, scale_factor=0.5, aux=False, use_relabeled=False, use_pretrained=True, **kwargs):
 

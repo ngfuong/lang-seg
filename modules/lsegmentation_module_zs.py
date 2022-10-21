@@ -36,7 +36,7 @@ class Fewshot_args:
     fold = 0
     
 
-class LSegmentationModuleZS(pl.LightningModule):
+class TransLSegmentationModuleZS(pl.LightningModule):
     def __init__(self, data_path, dataset, batch_size, base_lr, max_epochs, **kwargs):
         super().__init__()
 
@@ -210,10 +210,13 @@ class LSegmentationModuleZS(pl.LightningModule):
                 Logger.tbd_writer.close()
                 Logger.info('==================== Finished Training ====================')
 
-        threshold_epoch = 3
-        if self.args.benchmark in ['pascal', 'coco'] and self.current_epoch >= threshold_epoch:
-            print('End this loop!')
-            exit()
+        # COMMENT OUT HARD CODE EPOCH
+        ### BEGIN COMMENT
+        # threshold_epoch = 3
+        # if self.args.benchmark in ['pascal', 'coco'] and self.current_epoch >= threshold_epoch:
+        #     print('End this loop!')
+        #     exit()
+        ### END COMMENT
 
     def configure_optimizers(self):
         # if we want to fix the encoder
