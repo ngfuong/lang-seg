@@ -4,7 +4,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 from argparse import ArgumentParser
 import pytorch_lightning as pl
-from .lsegmentation_module_zs import TransLSegmentationModuleZS
+from .trans_lsegmentation_module_zs import TransLSegmentationModuleZS
 from .models.trans_lseg_net_zs import TransLSegNetZS, TransLSegRNNetZS
 from encoding.models.sseg.base import up_kwargs
 import os

@@ -13,7 +13,7 @@ import math
 from torchvision import transforms
 
 
-def do_training(hparams, model_constructor, shot=None):
+def do_training_debug(hparams, model_constructor, shot=None):
     # instantiate model
     model = model_constructor(**vars(hparams))
     # set all sorts of training parameters
@@ -48,7 +48,61 @@ def do_training(hparams, model_constructor, shot=None):
         hparams.callbacks = make_checkpoint_callbacks(hparams.exp_name, hparams.version)
 
     wblogger = get_wandb_logger(hparams)
-    hparams.logger = [wblogger, tbdlogger, ttlogger]
+    hparams.logger = [
+        # wblogger, 
+        # tbdlogger, 
+        # ttlogger,
+        ]
+    # hparams.logger = [ttlogger]
+
+    print(hparams)
+    exit()
+    trainer = pl.Trainer.from_argparse_args(hparams)
+    trainer.fit(model)
+    
+
+def do_training(hparams, model_constructor, shot=None):
+    # instantiate model
+    model = model_constructor(**vars(hparams))
+    # set all sorts of training parameters
+    hparams.gpus = -1
+    hparams.accelerator = "ddp"
+    hparams.benchmark = True
+
+    if hparams.dry_run:
+        print("Doing a dry run")
+        hparams.overfit_batches = hparams.batch_size
+
+    if not hparams.no_resume:
+        hparams = set_resume_parameters(hparams)
+
+    if not hasattr(hparams, "version") or hparams.version is None:
+        hparams.version = 0
+
+    hparams.sync_batchnorm = True
+
+    """
+    ttlogger = pl.loggers.TestTubeLogger(
+        "checkpoints", name=hparams.exp_name, version=hparams.version
+    )
+
+    tbdlogger = pl.loggers.TensorBoardLogger(
+        "checkpoints", name=hparams.exp_name, version=hparams.version
+        )
+    """
+    
+    # Handle metrics in logger
+    if shot=="few_shot":    # train zeroshot
+        hparams.callbacks = make_checkpoint_callbacks(hparams.exp_name, hparams.version, shot=shot)
+    else:   # train segmentation only
+        hparams.callbacks = make_checkpoint_callbacks(hparams.exp_name, hparams.version)
+
+    wblogger = get_wandb_logger(hparams)
+    hparams.logger = [
+        wblogger, 
+        # tbdlogger, 
+        # ttlogger,
+        ]
     # hparams.logger = [ttlogger]
 
     trainer = pl.Trainer.from_argparse_args(hparams)
@@ -65,7 +119,11 @@ def get_default_argument_parser():
     )
 
     parser.add_argument(
-        "--exp_name", type=str, required=True, help="name your experiment"
+        "--exp_name", 
+        type=str, 
+        # required=True, 
+        # default="",
+        help="name your experiment"
     )
 
     parser.add_argument(
@@ -251,6 +309,7 @@ def get_wandb_logger(hparams):
         id=hparams.wandb_id,
     )
 
+
     if hparams.wandb_id is None:
         _ = logger.experiment
 
@@ -259,6 +318,12 @@ def get_wandb_logger(hparams):
 
         with open(id_file, "w") as f:
             f.write(logger.version)
+
+    # Log hyperparameter
+    log_params = {k: vars(hparams).get(k, None) \
+        for k in ('accumulate_grad_batches', 'activation', 'backbone', \
+                'base_lr', 'batch_size', 'dropout', 'weight_decay', 'finetune_mode', 'fold')}
+    logger.experiment.config.update(log_params)
 
     return logger
 

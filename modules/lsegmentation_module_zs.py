@@ -36,7 +36,7 @@ class Fewshot_args:
     fold = 0
     
 
-class TransLSegmentationModuleZS(pl.LightningModule):
+class LSegmentationModuleZS(pl.LightningModule):
     def __init__(self, data_path, dataset, batch_size, base_lr, max_epochs, **kwargs):
         super().__init__()
 
@@ -190,7 +190,6 @@ class TransLSegmentationModuleZS(pl.LightningModule):
                 iou, fb_iou = return_value
                 self.log("fewshot_val_iou", iou)
                 self.log("fewshot_val_fb_iou", fb_iou)
-
     
     def validation_epoch_end(self, outs):
         if self.global_rank == 0:
@@ -342,6 +341,8 @@ class TransLSegmentationModuleZS(pl.LightningModule):
         bsz = logit_mask.size(0)
         logit_mask = logit_mask.view(bsz, 2, -1)
         gt_mask = gt_mask.view(bsz, -1).long()
+        # print("DEBU\tlogit_mask shape: ", logit_mask.shape)
+        # print("gt_mask shape:", gt_mask.shape)
 
         return self.cross_entropy_loss(logit_mask, gt_mask)
 

@@ -201,12 +201,20 @@ class LSeg(BaseModel):
         imshape = image_features.shape
         image_features = [image_features[i].unsqueeze(0).permute(0,2,3,1).reshape(-1, self.out_c) for i in range(len(image_features))]
 
+        print("images[0].shape: ", image_features[0].shape)
+        print("text[0].shape: ", text_features[0].shape)
+        
         # normalized features
         image_features = [image_feature / image_feature.norm(dim=-1, keepdim=True) for image_feature in image_features]
         text_features = [text_feature / text_feature.norm(dim=-1, keepdim=True) for text_feature in text_features]
         
         logits_per_images = [self.logit_scale * image_feature.half() @ text_feature.t() for image_feature, text_feature in zip(image_features, text_features)]
+        # logits_per_images[0].shape = (h*w, 2) = (57600, 2)
+        print("DEBUG LSEG_NET_ZS")
+        print("logits_per_images[0].shape: ", logits_per_images[0].shape)
         outs = [logits_per_image.float().view(1, imshape[2], imshape[3], -1).permute(0,3,1,2) for logits_per_image in logits_per_images]
+        print("DEBUG\tout[0] shape: ", outs[0].shape)
+        exit()
         out = torch.cat([out for out in outs], dim=0)
 
         out = self.scratch.output_conv(out)
